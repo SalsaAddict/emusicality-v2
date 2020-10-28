@@ -21,8 +21,8 @@
             </div>
         </div>
         <div class="card-body p-2">
-            <div class="d-flex">
-                <div class="btn-group btn-group-sm mx-auto mb-2" role="group">
+            <div class="d-flex mb-2" *ngIf="song?.groups?.length">
+                <div class="btn-group btn-group-sm mx-auto" role="group">
                     <button type="button" class="btn btn-primary" [ngClass]="{ 'active': song?.activeGroup() }"
                         (click)="song?.filter()">All</button>
                     <button type="button" *ngFor="let group of song?.groups" class="btn btn-primary"
@@ -57,4 +57,3 @@
         </div>
     </div>
 </fieldset>
-{{beats}}:{{seconds}}
