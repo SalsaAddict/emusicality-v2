@@ -1,0 +1,78 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false,
+    "definitions": {
+        "ITrack": {
+            "additionalProperties": false,
+            "properties": {
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "filename": {
+                    "title": "filename",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "description",
+                "filename"
+            ],
+            "title": "ITrack",
+            "type": "object"
+        },
+        "ITrackGroup": {
+            "additionalProperties": {
+                "items": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/ITrack"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "type": "array"
+            },
+            "title": "ITrackGroup",
+            "type": "object"
+        }
+    },
+    "properties": {
+        "$schema": {
+            "enum": [
+                "../../schemas/breakdown.json"
+            ],
+            "title": "$schema",
+            "type": "string"
+        },
+        "startOffset": {
+            "title": "startOffset",
+            "type": "number"
+        },
+        "tracks": {
+            "items": {
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/ITrackGroup"
+                    },
+                    {
+                        "$ref": "#/definitions/ITrack"
+                    },
+                    {
+                        "type": "string"
+                    }
+                ]
+            },
+            "title": "tracks",
+            "type": "array"
+        }
+    },
+    "required": [
+        "$schema",
+        "tracks"
+    ],
+    "type": "object"
+}
+

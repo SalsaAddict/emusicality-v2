@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schemas/breakdown.json",
+  "startOffset": 1.8,
+  "tracks": [
+    "Vocals",
+    {
+      "Percussion": ["Bongo", {
+        "description": "Guïra",
+        "filename": "guira.mp3"
+      }]
+    },
+    {
+      "Guitars": ["Requinto", "Segunda", "Bass"]
+    }
+  ]
+}

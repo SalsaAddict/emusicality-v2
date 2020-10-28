@@ -1,0 +1,11 @@
+{
+  "$schema": "../schemas/catalog.json",
+  "songs": {
+    "esoesamor": {
+      "title": "Eso Es Amor",
+      "artist": "Jiory",
+      "genre": "Bachata",
+      "bpm": 132
+    }
+  }
+}

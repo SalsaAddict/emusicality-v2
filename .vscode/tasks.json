@@ -1,0 +1,32 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Schema",
+            "dependsOn": [
+                "Schema-Catalog",
+                "Schema-Breakdown"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Schema-Catalog",
+            "type": "shell",
+            "command": "typescript-json-schema typings/catalog.d.ts ICatalog --out src/assets/schemas/catalog.json --titles --required --noExtraProps",
+            "problemMatcher": []
+        },
+        {
+            "label": "Schema-Breakdown",
+            "type": "shell",
+            "command": "typescript-json-schema typings/breakdown.d.ts IBreakdown --out src/assets/schemas/breakdown.json --titles --required --noExtraProps",
+            "problemMatcher": []
+        }
+    ]
+}

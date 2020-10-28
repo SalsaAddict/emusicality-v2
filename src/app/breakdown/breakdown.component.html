@@ -1,1 +1,60 @@
-<p>breakdown works!</p>
+<fieldset [disabled]="busy">
+    <div class="card">
+        <div class="card-header p-2" style="white-space: nowrap;">
+            <div class="media">
+                <img [src]="song?.asset('cover.jpg')" class="img-thumbnail mr-3" width="64" height="64">
+                <div class="media-body">
+                    <div class="d-flex">
+                        <div>
+                            <h5 class="my-0 font-weight-bold" [innerHTML]="song?.title"></h5>
+                            <p class="my-0" [innerHTML]="song?.artist"></p>
+                            <small class="my-0 text-muted initialism" [innerHTML]="song?.genre"></small>
+                        </div>
+                        <div class="ml-auto">
+                            <div class="badge badge-primary">
+                                <span [innerText]="song?.bpm"></span>
+                                <span>&nbsp;bpm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-2">
+            <div class="d-flex">
+                <div class="btn-group btn-group-sm mx-auto mb-2" role="group">
+                    <button type="button" class="btn btn-primary" [ngClass]="{ 'active': song?.activeGroup() }"
+                        (click)="song?.filter()">All</button>
+                    <button type="button" *ngFor="let group of song?.groups" class="btn btn-primary"
+                        [ngClass]="{ 'active': song?.activeGroup(group) }" (click)="song?.filter(group)"
+                        [innerText]="group"></button>
+                </div>
+            </div>
+            <div class="list-group mx-auto">
+                <div *ngFor="let track of song?.tracks" class="list-group-item d-flex py-2">
+                    <div [innerText]="track.description"></div>
+                    <div class="btn-group btn-group-sm ml-auto">
+                        <button type="button" *ngFor="let volume of ['off', 'down', 'up']" class="btn"
+                            [class]="track.isVolume(volume) ? 'btn-primary' : 'btn-outline-primary'"
+                            (click)="track.volume(volume)">
+                            <i class="fa fa-fw fa-lg" [class]="'fa-volume-' + volume"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer p-2">
+            <div class="d-flex">
+                <div class="btn-group btn-group-sm mx-auto">
+                    <button type="button" class="btn btn-primary" (click)="play()" *ngIf="!playing">
+                        <i class="fa fa-fw fa-lg fa-play"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary" (click)="pause()" *ngIf="playing">
+                        <i class="fa fa-fw fa-lg fa-pause"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</fieldset>
+{{beats}}:{{seconds}}
