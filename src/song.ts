@@ -3,7 +3,7 @@ import { IBreakdown, ITrack, ITrackGroup } from '../typings/breakdown';
 import { HttpClient } from '@angular/common/http';
 
 export class Song implements ISong {
-  static load(http: HttpClient, context: AudioContext, songId: string) {
+  static load(http: HttpClient, audioContext: AudioContext, destinationNode: AudioNode, songId: string) {
     return new Promise<Song>((resolve, reject) => {
       let path: string = "assets/songs/";
       http.get<ICatalog>(`${path}catalog.json`)
@@ -12,7 +12,8 @@ export class Song implements ISong {
           http.get<IBreakdown>(`${path}breakdown.json`)
             .subscribe((breakdown) => {
               let song = new Song(
-                context,
+                audioContext,
+                destinationNode,
                 path,
                 songId,
                 catalog.songs[songId].title,
@@ -39,6 +40,7 @@ export class Song implements ISong {
   }
   constructor(
     private readonly _audioContext: AudioContext,
+    private readonly _destinationNode: AudioNode,
     private readonly _path: string,
     readonly songId: string,
     readonly title: string,
@@ -46,20 +48,6 @@ export class Song implements ISong {
     readonly genre: string,
     readonly bpm: number,
     readonly startOffset: number) { }
-  private _resume(): Promise<void> {
-    switch (this._audioContext.state) {
-      case "running": return Promise.resolve();
-      case "suspended": return this._audioContext.resume();
-      default: return Promise.reject(this._audioContext.state);
-    }
-  }
-  private _suspend(): Promise<void> {
-    switch (this._audioContext.state) {
-      case "suspended": return Promise.resolve();
-      case "running": return this._audioContext.suspend();
-      default: return Promise.reject(this._audioContext.state);
-    }
-  }
   asset(fileName: string): string { return `${this._path}${fileName}`; }
   readonly groups: string[] = [];
   private _group: string = "";
@@ -72,9 +60,9 @@ export class Song implements ISong {
   addTrack(track: string | ITrack, groupName?: string): void {
     if (groupName && this.groups.indexOf(groupName!) < 0) this.groups.push(groupName!);
     if (typeof track === "string")
-      this._tracks.push(new Track(this._audioContext, track, this.asset(`${track.toLowerCase()}.mp3`), groupName));
+      this._tracks.push(new Track(this._audioContext, this._destinationNode, track, this.asset(`${track.toLowerCase()}.mp3`), groupName));
     else
-      this._tracks.push(new Track(this._audioContext, track.description, this.asset(track.filename), groupName));
+      this._tracks.push(new Track(this._audioContext, this._destinationNode, track.description, this.asset(track.filename), groupName));
   }
   get tracks(): Track[] {
     return this._group ? this._tracks.filter(track => track.groupName === this._group) : this._tracks;
@@ -83,16 +71,14 @@ export class Song implements ISong {
   get playing(): boolean { return this._playing; }
   play(seconds: number = 0): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this._resume().then(() => {
-        let promises: Promise<void>[] = [];
-        this._tracks.forEach(track => promises.push(track.seek(seconds)));
+      let promises: Promise<void>[] = [];
+      this._tracks.forEach(track => promises.push(track.seek(seconds)));
+      Promise.all(promises).then(() => {
+        promises = [];
+        this._tracks.forEach(track => promises.push(track.play()));
         Promise.all(promises).then(() => {
-          promises = [];
-          this._tracks.forEach(track => promises.push(track.play()));
-          Promise.all(promises).then(() => {
-            this._playing = true;
-            resolve();
-          }).catch(reason => reject(reason));
+          this._playing = true;
+          resolve();
         }).catch(reason => reject(reason));
       }).catch(reason => reject(reason));
     });
@@ -100,16 +86,15 @@ export class Song implements ISong {
   pause(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.tracks.forEach(track => track.pause());
-      this._suspend().then(() => {
-        this._playing = false;
-        resolve();
-      }).catch(reason => reject(reason));;
+      this._playing = false;
+      resolve();
     })
   }
 }
 export class Track implements ITrack {
   constructor(
     private readonly _audioContext: AudioContext,
+    private readonly _destinationNode: AudioNode,
     readonly description: string,
     readonly filename: string,
     readonly groupName?: string) {
@@ -117,7 +102,7 @@ export class Track implements ITrack {
     this._sourceNode = _audioContext.createMediaElementSource(this._audioElement);
     this._gainNodeV = _audioContext.createGain();
     this._gainNodeM = _audioContext.createGain();
-    this._sourceNode.connect(this._gainNodeV).connect(this._gainNodeM).connect(_audioContext.destination);
+    this._sourceNode.connect(this._gainNodeV).connect(this._gainNodeM).connect(this._destinationNode);
     this._audioElement.src = this.filename;
     this._audioElement.preload = "auto";
     this.volume("down");
@@ -137,11 +122,11 @@ export class Track implements ITrack {
   play(): Promise<void> { return this._audioElement.play(); }
   pause(): void { this._audioElement.pause(); }
   private _volume?: string;
-  private _setGain(_gainNode: GainNode, gain: number): void {
+  private _setGain(_gainNode: GainNode, gain: number, delay: number = 2): void {
     if (this._audioContext.state !== "running")
       _gainNode.gain.value = gain;
     else
-      _gainNode.gain.linearRampToValueAtTime(gain, this._audioContext.currentTime + 2);
+      _gainNode.gain.linearRampToValueAtTime(gain, this._audioContext.currentTime + delay);
   }
   volume(volume: string, seconds: number = 1): void {
     let value: number;

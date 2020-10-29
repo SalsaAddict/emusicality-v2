@@ -11,11 +11,31 @@ import { Song } from '../../song';
 })
 export class BreakdownComponent implements OnInit {
   constructor(private route: ActivatedRoute, private http: HttpClient) {
-    Song.load(http, this._audioContext, this.route.snapshot.params['songId']).then(song => this.song = song);
+    this._audioContext = new AudioContext();
+    this._gainNode = this._audioContext.createGain();
+    this._gainNode.connect(this._audioContext.destination);
+    Song.load(http, this._audioContext, this._gainNode, this.route.snapshot.params['songId']).then(song => this.song = song);
   }
-  ngOnInit(): void { }
-  private _audioContext: AudioContext = new AudioContext();
   song?: Song;
+  ngOnInit(): void { }
+
+  private _audioContext: AudioContext;
+  private _resume(): Promise<void> {
+    switch (this._audioContext.state) {
+      case "running": return Promise.resolve();
+      case "suspended": return this._audioContext.resume();
+      default: return Promise.reject(this._audioContext.state);
+    }
+  }
+  private _suspend(): Promise<void> {
+    switch (this._audioContext.state) {
+      case "suspended": return Promise.resolve();
+      case "running": return this._audioContext.suspend();
+      default: return Promise.reject(this._audioContext.state);
+    }
+  }
+
+  private _gainNode: GainNode;
 
   private _busy: boolean = false;
   get busy(): boolean { return this._busy; }
@@ -38,18 +58,26 @@ export class BreakdownComponent implements OnInit {
 
   play(): void {
     this._busy = true;
-    this.song?.play(this._seconds).then(() => {
-      this._startAnimation();
-      this._busy = false;
+    this._gainNode.gain.value = 1;
+    this._resume().then(() => {
+      this.song?.play(this._seconds).then(() => {
+        this._startAnimation();
+        this._busy = false;
+      });
     });
   }
 
   pause(): void {
     this._busy = true;
-    this.song?.pause().then(() => {
-      this._stopAnimation();
-      this._busy = false;
-    });
+    this._gainNode.gain.linearRampToValueAtTime(0, this._audioContext.currentTime + 0.5);
+    setTimeout(() => {
+        this.song?.pause().then(() => {
+          this._stopAnimation();
+          this._suspend().then(() => {
+            this._busy = false;
+          });
+        });
+    }, 600);
   }
 
   public get playing(): boolean { return this.song?.playing || false; }
