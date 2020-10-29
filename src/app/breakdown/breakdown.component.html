@@ -10,14 +10,47 @@
                             <p class="my-0" [innerHTML]="song?.artist"></p>
                             <small class="my-0 text-muted initialism" [innerHTML]="song?.genre"></small>
                         </div>
-                        <div class="ml-auto">
-                            <div class="badge badge-primary">
+                        <div class="ml-auto text-center">
+                            <p class="badge badge-primary my-0">
                                 <span [innerText]="song?.bpm"></span>
                                 <span>&nbsp;bpm</span>
-                            </div>
+                            </p>
+                            <h3 class="my-0" [innerText]="beat | number"
+                                [ngClass]="{ 'text-danger font-weight-bold': beat === 1 }"></h3>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="card-body p-2">
+            <div class="row">
+                <div class="col-6 text-center">
+                    <p>
+                        <small class="text-muted">Section</small>
+                        <br>
+                        <span [innerText]="section?.description || '-'"></span>
+                    </p>
+                </div>
+                <div class="col-6 text-center">
+                    <p>
+                        <small class="text-muted">Framework</small>
+                        <br>
+                        <span [innerText]="measure?.framework || '-'"></span>
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex flex-row justify-content-center">
+                <div *ngFor="let m of section?.measures; last as isLast">
+                    <span [class]="measureClass(m, isLast)"></span>
+                </div>
+            </div>
+            <div class="d-flex flex-row justify-content-center">
+                <div *ngFor="let tick of measure?.ticks">
+                    <i class="text-info fa fa-fw fa-lg" [class]="beat === tick ? 'fa-circle' : 'fa-circle-o'"></i>
+                </div>
+            </div>
+            <div class="text-center">
+                <small [innerText]="measureText(measure)"></small>
             </div>
         </div>
         <div class="card-body p-2">
@@ -57,4 +90,5 @@
         </div>
     </div>
 </fieldset>
-{{seconds}}
+<pre>{{section | json}}</pre>
+<pre>{{measure | json}}</pre>

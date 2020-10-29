@@ -1,6 +1,7 @@
 {
   "$schema": "../../schemas/breakdown.json",
   "startOffset": 1.8,
+  "beatsPerMeasure": 8,
   "tracks": [
     "Vocals",
     {
@@ -11,6 +12,16 @@
     },
     {
       "Guitars": ["Requinto", "Segunda", "Bass"]
+    }
+  ],
+  "sections": [{
+      "description": "Intro",
+      "measures": [0, 0, 4]
+    },
+    {
+      "description": "Verse",
+      "framework": "Derecho",
+      "measures": [0, 0, 0, 0, -1, 0, 0, 0, 0]
     }
   ]
 }

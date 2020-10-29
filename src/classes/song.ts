@@ -1,6 +1,9 @@
-import { ICatalog, ISong } from '../typings/catalog';
-import { IBreakdown, ITrack, ITrackGroup } from '../typings/breakdown';
+import { ICatalog, ISong } from '../../typings/catalog';
+import { IBreakdown, ITrack, ITrackGroup, ISection, IMeasure } from '../../typings/breakdown';
 import { HttpClient } from '@angular/common/http';
+import { Track } from './track';
+import { Section } from './section';
+import { Measure } from './measure';
 
 export class Song implements ISong {
   static load(http: HttpClient, audioContext: AudioContext, destinationNode: AudioNode, songId: string) {
@@ -20,7 +23,8 @@ export class Song implements ISong {
                 catalog.songs[songId].artist,
                 catalog.songs[songId].genre,
                 catalog.songs[songId].bpm,
-                breakdown.startOffset || 0
+                breakdown.startOffset || 0,
+                breakdown.beatsPerMeasure
               );
               breakdown.tracks.forEach((track: string | ITrack | ITrackGroup) => {
                 if (typeof track !== "string") {
@@ -32,6 +36,37 @@ export class Song implements ISong {
                     });
                 }
                 else song.addTrack(track);
+              });
+              let currentIndex: number = 1, measure: Measure;
+              breakdown.sections.forEach((s: ISection) => {
+                let section = new Section(s.description, currentIndex),
+                  framework: string | undefined = s.framework;
+                if (typeof s.measures === "number") {
+                  for (let i = 1; i <= s.measures; i++) {
+                    measure = new Measure(currentIndex, song.beatsPerMeasure, framework, false);
+                    currentIndex += measure.beats;
+                    section.measures.push(measure);
+                  }
+                }
+                else s.measures.forEach((m) => {
+                  if (typeof m === "string") {
+                    framework = m!;
+                    measure = new Measure(currentIndex, song.beatsPerMeasure, framework, false, false);
+                  }
+                  else if (typeof m === "number") {
+                    let beats: number = m > 0 ? m : song.beatsPerMeasure;
+                    measure = new Measure(currentIndex, beats, framework, m < 0, beats != song.beatsPerMeasure);
+                  }
+                  else {
+                    let beats: number = (m.beats || 0) > 0 ? m.beats! : song.beatsPerMeasure,
+                      splitAfter: boolean = m.splitPhrase || false;
+                    framework = m.framework ? m.framework : framework;
+                    measure = new Measure(currentIndex, beats, framework, splitAfter, beats != song.beatsPerMeasure)
+                  }
+                  currentIndex += measure.beats;
+                  section.measures.push(measure);
+                });
+                song.sections.push(section);
               });
               resolve(song);
             });
@@ -47,7 +82,8 @@ export class Song implements ISong {
     readonly artist: string,
     readonly genre: string,
     readonly bpm: number,
-    readonly startOffset: number) { }
+    readonly startOffset: number,
+    readonly beatsPerMeasure: number) { }
   asset(fileName: string): string { return `${this._path}${fileName}`; }
   readonly groups: string[] = [];
   private _group: string = "";
@@ -67,6 +103,9 @@ export class Song implements ISong {
   get tracks(): Track[] {
     return this._group ? this._tracks.filter(track => track.groupName === this._group) : this._tracks;
   }
+
+  sections: Section[] = [];
+
   private _playing: boolean = false;
   get playing(): boolean { return this._playing; }
   play(seconds: number = 0): Promise<void> {
@@ -90,55 +129,4 @@ export class Song implements ISong {
       resolve();
     })
   }
-}
-export class Track implements ITrack {
-  constructor(
-    private readonly _audioContext: AudioContext,
-    private readonly _destinationNode: AudioNode,
-    readonly description: string,
-    readonly filename: string,
-    readonly groupName?: string) {
-    this._audioElement = document.createElement("audio");
-    this._sourceNode = _audioContext.createMediaElementSource(this._audioElement);
-    this._gainNodeV = _audioContext.createGain();
-    this._gainNodeM = _audioContext.createGain();
-    this._sourceNode.connect(this._gainNodeV).connect(this._gainNodeM).connect(this._destinationNode);
-    this._audioElement.src = this.filename;
-    this._audioElement.preload = "auto";
-    this.volume("down");
-    this.unmute();
-  }
-  private readonly _audioElement: HTMLAudioElement;
-  private readonly _sourceNode: MediaElementAudioSourceNode;
-  private readonly _gainNodeM: GainNode;
-  private readonly _gainNodeV: GainNode;
-  seek(seconds: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this._audioElement.currentTime = seconds;
-      let cancel = setTimeout(() => { reject(this._audioElement.readyState); }, 2500);
-      this._audioElement.oncanplaythrough = () => { clearTimeout(cancel); resolve(); }
-    });
-  }
-  play(): Promise<void> { return this._audioElement.play(); }
-  pause(): void { this._audioElement.pause(); }
-  private _volume?: string;
-  private _setGain(_gainNode: GainNode, gain: number, delay: number = 2): void {
-    if (this._audioContext.state !== "running")
-      _gainNode.gain.value = gain;
-    else
-      _gainNode.gain.linearRampToValueAtTime(gain, this._audioContext.currentTime + delay);
-  }
-  volume(volume: string, seconds: number = 1): void {
-    let value: number;
-    this._volume = volume;
-    switch (volume) {
-      case "down": value = 0.5; break;
-      case "up": value = 1; break;
-      default: value = 0; break;
-    }
-    this._setGain(this._gainNodeV, value);
-  }
-  isVolume(volume: string): boolean { return this._volume === volume; }
-  mute(): void { this._setGain(this._gainNodeM, 0); }
-  unmute(): void { this._setGain(this._gainNodeM, 1); }
 }

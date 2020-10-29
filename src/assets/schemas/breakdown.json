@@ -2,6 +2,68 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "additionalProperties": false,
     "definitions": {
+        "IMeasure": {
+            "additionalProperties": false,
+            "properties": {
+                "beats": {
+                    "title": "beats",
+                    "type": "number"
+                },
+                "framework": {
+                    "title": "framework",
+                    "type": "string"
+                },
+                "splitPhrase": {
+                    "title": "splitPhrase",
+                    "type": "boolean"
+                }
+            },
+            "title": "IMeasure",
+            "type": "object"
+        },
+        "ISection": {
+            "additionalProperties": false,
+            "properties": {
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "framework": {
+                    "title": "framework",
+                    "type": "string"
+                },
+                "measures": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/definitions/IMeasure"
+                                    },
+                                    {
+                                        "type": [
+                                            "string",
+                                            "number"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "number"
+                        }
+                    ],
+                    "title": "measures"
+                }
+            },
+            "required": [
+                "description",
+                "measures"
+            ],
+            "title": "ISection",
+            "type": "object"
+        },
         "ITrack": {
             "additionalProperties": false,
             "properties": {
@@ -47,6 +109,17 @@
             "title": "$schema",
             "type": "string"
         },
+        "beatsPerMeasure": {
+            "title": "beatsPerMeasure",
+            "type": "number"
+        },
+        "sections": {
+            "items": {
+                "$ref": "#/definitions/ISection"
+            },
+            "title": "sections",
+            "type": "array"
+        },
         "startOffset": {
             "title": "startOffset",
             "type": "number"
@@ -71,6 +144,8 @@
     },
     "required": [
         "$schema",
+        "beatsPerMeasure",
+        "sections",
         "tracks"
     ],
     "type": "object"
