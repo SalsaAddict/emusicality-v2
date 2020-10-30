@@ -15,42 +15,48 @@
                                 <span [innerText]="song?.bpm"></span>
                                 <span>&nbsp;bpm</span>
                             </p>
-                            <h3 class="my-0" [innerText]="beat | number"
+                            <h3 class="mt-1 mb-0" [innerText]="beat | number"
                                 [ngClass]="{ 'text-danger font-weight-bold': beat === 1 }"></h3>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card-body p-2">
+        <div class="card-body p-2 text-center">
             <div class="row">
                 <div class="col-6 text-center">
-                    <p>
+                    <p [ngSwitch]="!!section" class="my-0">
                         <small class="text-muted">Section</small>
                         <br>
-                        <span [innerText]="section?.description || '-'"></span>
+                        <b *ngSwitchCase="true" class="text-info" [innerText]="section!.description"></b>
+                        <span *ngSwitchCase="false" class="text-muted">&mdash;</span>
                     </p>
                 </div>
                 <div class="col-6 text-center">
-                    <p>
+                    <p [ngSwitch]="!!measure?.framework" class="my-0">
                         <small class="text-muted">Framework</small>
                         <br>
-                        <span [innerText]="measure?.framework || '-'"></span>
+                        <b *ngSwitchCase="true" class="text-info" [innerText]="measure!.framework"></b>
+                        <span *ngSwitchCase="false" class="text-muted">&mdash;</span>
                     </p>
                 </div>
             </div>
-            <div class="d-flex flex-row justify-content-center">
-                <div *ngFor="let m of section?.measures; last as isLast">
-                    <span [class]="measureClass(m, isLast)"></span>
+            <small class="text-muted my-0">Phrasing</small>
+            <div [ngSwitch]="!!section">
+                <div *ngSwitchCase="true" class="d-flex flex-row justify-content-center">
+                    <div *ngFor="let m of section!.measures; last as isLast">
+                        <span [class]="measureClass(m, isLast)"></span>
+                    </div>
                 </div>
+                <span *ngSwitchCase="false" class="text-muted">&mdash;</span>
             </div>
-            <div class="d-flex flex-row justify-content-center">
-                <div *ngFor="let tick of measure?.ticks">
-                    <i class="text-info fa fa-fw fa-lg" [class]="beat === tick ? 'fa-circle' : 'fa-circle-o'"></i>
+            <div [ngSwitch]="!!measure">
+                <div *ngSwitchCase="true" class="d-flex flex-row justify-content-center">
+                    <div *ngFor="let tick of measure?.ticks">
+                        <i class="text-info fa fa-fw fa-lg" [class]="beat === tick ? 'fa-circle' : 'fa-circle-o'"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="text-center">
-                <small [innerText]="measureText(measure)"></small>
+                <span *ngSwitchCase="false" class="text-muted">&mdash;</span>
             </div>
         </div>
         <div class="card-body p-2">
@@ -84,6 +90,9 @@
                     </button>
                     <button type="button" class="btn btn-primary" (click)="pause()" *ngIf="playing">
                         <i class="fa fa-fw fa-lg fa-pause"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary" (click)="next()">
+                        <i class="fa fa-fw fa-lg fa-forward"></i>
                     </button>
                 </div>
             </div>
