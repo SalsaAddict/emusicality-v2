@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/breakdown.json",
-  "startOffset": 1.8,
+  "startOffset": 1.79,
   "beatsPerMeasure": 8,
   "tracks": [
     "Vocals",

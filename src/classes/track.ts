@@ -1,4 +1,5 @@
 import { ITrack } from '../../typings/breakdown';
+import { setGain } from "./setGain";
 
 export class Track implements ITrack {
   constructor(
@@ -21,24 +22,23 @@ export class Track implements ITrack {
   private readonly _sourceNode: MediaElementAudioSourceNode;
   private readonly _gainNodeM: GainNode;
   private readonly _gainNodeV: GainNode;
+  setPlaybackRate(rate: number) { this._audioElement.playbackRate = rate; }
   seek(seconds: number): Promise<void> {
     return new Promise((resolve, reject) => {
       this._audioElement.currentTime = seconds;
       let cancel = setTimeout(() => { reject(this._audioElement.readyState); }, 2500);
-      this._audioElement.oncanplaythrough = () => { clearTimeout(cancel); resolve(); };
+      this._audioElement.oncanplaythrough = () => {
+        clearTimeout(cancel);
+        this._audioElement.oncanplaythrough = null;
+        resolve();
+      };
     });
   }
-  play(): Promise<void> { return this._audioElement.play(); }
-  pause(): void { this._audioElement.pause(); }
+  play() { this._audioElement.play(); }
+  pause() { this._audioElement.pause(); }
   private _volume?: string;
-  private _setGain(_gainNode: GainNode, gain: number, delay: number = 2): void {
-    if (this._audioContext.state !== "running")
-      _gainNode.gain.value = gain;
-
-    else
-      _gainNode.gain.linearRampToValueAtTime(gain, this._audioContext.currentTime + delay);
-  }
-  volume(volume: string, seconds: number = 1): void {
+  isVolume(volume: string): boolean { return this._volume === volume; }
+  volume(volume: string, fadeSeconds: number = 0) {
     let value: number;
     this._volume = volume;
     switch (volume) {
@@ -46,9 +46,8 @@ export class Track implements ITrack {
       case "up": value = 1; break;
       default: value = 0; break;
     }
-    this._setGain(this._gainNodeV, value);
+    setGain(this._gainNodeV, value, fadeSeconds);
   }
-  isVolume(volume: string): boolean { return this._volume === volume; }
-  mute(): void { this._setGain(this._gainNodeM, 0); }
-  unmute(): void { this._setGain(this._gainNodeM, 1); }
+  mute(fadeSeconds: number = 0): void { setGain(this._gainNodeM, 0, fadeSeconds); }
+  unmute(fadeSeconds: number = 0): void { setGain(this._gainNodeM, 1, fadeSeconds); }
 }

@@ -81,16 +81,25 @@ export class Song implements ISong {
     readonly title: string,
     readonly artist: string,
     readonly genre: string,
-    readonly bpm: number,
-    readonly startOffset: number,
+    private readonly _bpm: number,
+    private readonly _startOffset: number,
     readonly beatsPerMeasure: number) { }
+  private _playbackRate: number = 1;
+  get playbackRate(): number { return this._playbackRate; }
+  set playbackRate(rate: number) {
+    this._playbackRate = rate;
+    this._tracks.forEach(track => track.setPlaybackRate(rate));
+  }
+  get bpm(): number { return this._bpm * this._playbackRate; }
+  get secondsPerBeat(): number { return (60 / this.bpm); }
+  get startOffset(): number { return this._startOffset / this._playbackRate; }
   asset(fileName: string): string { return `${this._path}${fileName}`; }
   readonly groups: string[] = [];
   private _group: string = "";
   activeGroup(group: string = ""): boolean { return this._group === group; }
   filter(group: string = ""): void {
     this._group = group;
-    this._tracks.forEach((track) => this.tracks.indexOf(track) >= 0 ? track.unmute() : track.mute());
+    this._tracks.forEach((track) => this.tracks.indexOf(track) >= 0 ? track.unmute(2) : track.mute(3));
   }
   private readonly _tracks: Track[] = [];
   addTrack(track: string | ITrack, groupName?: string): void {
@@ -100,33 +109,6 @@ export class Song implements ISong {
     else
       this._tracks.push(new Track(this._audioContext, this._destinationNode, track.description, this.asset(track.filename), groupName));
   }
-  get tracks(): Track[] {
-    return this._group ? this._tracks.filter(track => track.groupName === this._group) : this._tracks;
-  }
-
+  get tracks(): Track[] { return this._group ? this._tracks.filter(track => track.groupName === this._group) : this._tracks; }
   sections: Section[] = [];
-
-  private _playing: boolean = false;
-  get playing(): boolean { return this._playing; }
-  play(seconds: number = 0): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      let promises: Promise<void>[] = [];
-      this._tracks.forEach(track => promises.push(track.seek(seconds)));
-      Promise.all(promises).then(() => {
-        promises = [];
-        this._tracks.forEach(track => promises.push(track.play()));
-        Promise.all(promises).then(() => {
-          this._playing = true;
-          resolve();
-        }).catch(reason => reject(reason));
-      }).catch(reason => reject(reason));
-    });
-  }
-  pause(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.tracks.forEach(track => track.pause());
-      this._playing = false;
-      resolve();
-    })
-  }
 }

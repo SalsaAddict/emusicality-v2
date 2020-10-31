@@ -4,6 +4,9 @@ import { HttpClient } from '@angular/common/http';
 import { Song } from '../../classes/song';
 import { Section } from 'src/classes/section';
 import { Measure } from 'src/classes/measure';
+import { setGain } from '../../classes/setGain';
+import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
+import { timeStamp } from 'console';
 
 @Component({
   selector: 'app-breakdown',
@@ -42,11 +45,19 @@ export class BreakdownComponent implements OnInit {
   private _busy: boolean = false;
   get busy(): boolean { return this._busy; }
 
+  private _playing: boolean = false;
+  get playing(): boolean { return this._playing; }
+
+  get playbackRate(): number { return this.song!.playbackRate; }
+  set playbackRate(rate: number) {
+    this.song!.playbackRate = rate!;
+  }
+
   private _seconds: number = 0;
   get seconds(): number { return this._seconds; }
   set seconds(s: number) {
     this._seconds = s;
-    this._beatIndex = this._seconds <= this.song!.startOffset ? 0 : Math.floor((this._seconds - this.song!.startOffset) / (60 / this.song!.bpm)) + 1;
+    this._beatIndex = this._seconds <= this.song!.startOffset ? 0 : Math.floor((this._seconds - this.song!.startOffset) / this.song!.secondsPerBeat) + 1;
     this._synchronise();
   }
 
@@ -54,7 +65,7 @@ export class BreakdownComponent implements OnInit {
   get beatIndex(): number { return this._beatIndex; }
   set beatIndex(i: number) {
     this._beatIndex = i;
-    this._seconds = i <= 1 ? 0 : (i * (60 / this.song!.bpm)) + this.song!.startOffset;
+    this._seconds = i <= 1 ? 0 : (i * this.song!.secondsPerBeat) + this.song!.startOffset;
     this._synchronise();
   }
 
@@ -85,7 +96,7 @@ export class BreakdownComponent implements OnInit {
 
   measureClass(measure: Measure, isLast: boolean): string {
     let active: boolean = measure === this.measure!,
-      icon: string = !active ? "fa-circle-o" : measure.timingChange ? "fa-exclamation-circle" : measure.splitPhrase ? "fa-stop-circle" : "fa-circle",
+      icon: string = !active ? "fa-circle-o" : measure.timingChange ? "fa-exclamation-circle" : measure.splitPhrase ? "fa-pause-circle" : "fa-circle",
       context: string = measure.timingChange ? "text-danger" : measure.splitPhrase ? "text-warning" : "text-info",
       animation: string = active ? "animate__animated animate__faster animate__heartBeat" : "",
       margin: string = measure.splitPhrase && !isLast ? "mr-2" : "";
@@ -101,40 +112,47 @@ export class BreakdownComponent implements OnInit {
   }
   private _stopAnimation(): void { cancelAnimationFrame(this._frameHandle!); }
 
-  get playing(): boolean { return this.song?.playing || false; }
+  seek(): Promise<void[]> {
+    let promises: Promise<void>[] = [];
+    this.song!.tracks.forEach(track => promises.push(track.seek(this.seconds)));
+    return Promise.all(promises);
+  }
 
-  play(): void {
+  play() {
     this._busy = true;
-    this._gainNode.gain.value = 1;
+    setGain(this._gainNode, 0, 0);
     this._resume().then(() => {
-      this.song?.play(this._seconds).then(() => {
+      this.seek().then(() => {
         this._startAnimation();
+        this.song!.tracks.forEach(track => track.play());
+        setGain(this._gainNode, 1, 0.25);
+        this._playing = true;
         this._busy = false;
       });
     });
   }
 
-  pause(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this._busy = true;
-      this._gainNode.gain.linearRampToValueAtTime(0, this._audioContext.currentTime + 0.5);
-      setTimeout(() => {
-        this.song?.pause().then(() => {
-          this._stopAnimation();
-          this._suspend().then(() => {
-            this._busy = false;
-            resolve();
-          });
-        });
-      }, 600);
-    });
+  pause() {
+    this._busy = true;
+    setGain(this._gainNode, 0, 0.5);
+    setTimeout(() => {
+      this.song!.tracks.forEach(track => track.pause());
+      this._stopAnimation();
+      this._suspend().then(() => {
+        this._playing = false;
+        this._busy = false;
+      });
+    }, 600);
   }
 
   next(): void {
     let playing: boolean = this.playing;
-    this.pause().then(() => {
-      this.beatIndex = this.section ? this.section!.endIndex + 1 : 1;
-      if (playing) this.play();
-    });
+    setGain(this._gainNode, 0, 0);
+    if (playing) {
+      this._stopAnimation();
+      this.song!.tracks.forEach(track => track.pause());
+    }
+    this.beatIndex = this.section ? this.section!.endIndex + 1 : 0;
+    this.seek().then(() => { if (playing) this.play(); });
   }
 }
