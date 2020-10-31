@@ -5,8 +5,6 @@ import { Song } from '../../classes/song';
 import { Section } from 'src/classes/section';
 import { Measure } from 'src/classes/measure';
 import { setGain } from '../../classes/setGain';
-import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
-import { timeStamp } from 'console';
 
 @Component({
   selector: 'app-breakdown',
@@ -48,9 +46,15 @@ export class BreakdownComponent implements OnInit {
   private _playing: boolean = false;
   get playing(): boolean { return this._playing; }
 
-  get playbackRate(): number { return this.song!.playbackRate; }
-  set playbackRate(rate: number) {
-    this.song!.playbackRate = rate!;
+  readonly playbackRates: string[] = ["slow", "normal", "fast"];
+  private _playbackRate: string = "normal";
+  isPlaybackRate(rate: string) { return rate === this._playbackRate; }
+  playbackRate(rate: string) {
+    switch (this._playbackRate = rate) {
+      case "fast": this.song!.playbackRate = 1.1; break;
+      case "slow": this.song!.playbackRate = 0.9; break;
+      default: this.song!.playbackRate = 1; break;
+    }
   }
 
   private _seconds: number = 0;
@@ -106,8 +110,8 @@ export class BreakdownComponent implements OnInit {
   private _frameHandle?: number;
   private _startAnimation(time: number = this._audioContext.currentTime): void {
     this._frameHandle = requestAnimationFrame(() => {
-      this.seconds += time = (this._audioContext.currentTime - time);
-      this._startAnimation(this._audioContext.currentTime);
+      this.seconds += (-time + (time = this._audioContext.currentTime)) * this.song!.playbackRate;
+      this._startAnimation(time);
     });
   }
   private _stopAnimation(): void { cancelAnimationFrame(this._frameHandle!); }

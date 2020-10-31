@@ -22,7 +22,7 @@ export class Track implements ITrack {
   private readonly _sourceNode: MediaElementAudioSourceNode;
   private readonly _gainNodeM: GainNode;
   private readonly _gainNodeV: GainNode;
-  setPlaybackRate(rate: number) { this._audioElement.playbackRate = rate; }
+  set playbackRate(rate: number) { this._audioElement.playbackRate = rate; }
   seek(seconds: number): Promise<void> {
     return new Promise((resolve, reject) => {
       this._audioElement.currentTime = seconds;

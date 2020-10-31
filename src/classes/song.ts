@@ -82,17 +82,18 @@ export class Song implements ISong {
     readonly artist: string,
     readonly genre: string,
     private readonly _bpm: number,
-    private readonly _startOffset: number,
-    readonly beatsPerMeasure: number) { }
+    readonly startOffset: number,
+    readonly beatsPerMeasure: number) {
+    this.secondsPerBeat = 60 / this._bpm;
+  }
   private _playbackRate: number = 1;
   get playbackRate(): number { return this._playbackRate; }
   set playbackRate(rate: number) {
     this._playbackRate = rate;
-    this._tracks.forEach(track => track.setPlaybackRate(rate));
+    this._tracks.forEach(track => track.playbackRate = rate);
   }
   get bpm(): number { return this._bpm * this._playbackRate; }
-  get secondsPerBeat(): number { return (60 / this.bpm); }
-  get startOffset(): number { return this._startOffset / this._playbackRate; }
+  readonly secondsPerBeat: number;
   asset(fileName: string): string { return `${this._path}${fileName}`; }
   readonly groups: string[] = [];
   private _group: string = "";
