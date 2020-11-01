@@ -12,7 +12,7 @@
                         </div>
                         <div class="ml-auto text-center">
                             <p class="badge badge-primary my-0">
-                                <span [innerText]="song?.bpm | number"></span>
+                                <span [innerText]="song!.clock.bpm | number"></span>
                                 <span>&nbsp;bpm</span>
                             </p>
                             <h3 class="mt-1 mb-0" [innerText]="beat | number"

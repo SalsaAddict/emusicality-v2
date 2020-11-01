@@ -4,9 +4,15 @@ import { HttpClient } from '@angular/common/http';
 import { Track } from './track';
 import { Section } from './section';
 import { Measure } from './measure';
+import { Clock, IBeatElapsedCallback } from './clock';
 
-export class Song implements ISong {
-  static load(http: HttpClient, audioContext: AudioContext, destinationNode: AudioNode, songId: string) {
+export class Song {
+  static load(
+    http: HttpClient,
+    audioContext: AudioContext,
+    destinationNode: AudioNode,
+    songId: string,
+    beatElapsedCallback: IBeatElapsedCallback) {
     return new Promise<Song>((resolve, reject) => {
       let path: string = "assets/songs/";
       http.get<ICatalog>(`${path}catalog.json`)
@@ -24,8 +30,8 @@ export class Song implements ISong {
                 catalog.songs[songId].genre,
                 catalog.songs[songId].bpm,
                 breakdown.startOffset || 0,
-                breakdown.beatsPerMeasure
-              );
+                breakdown.beatsPerMeasure,
+                beatElapsedCallback);
               breakdown.tracks.forEach((track: string | ITrack | ITrackGroup) => {
                 if (typeof track !== "string") {
                   if (track.description && track.filename)
@@ -81,23 +87,22 @@ export class Song implements ISong {
     readonly title: string,
     readonly artist: string,
     readonly genre: string,
-    private readonly _bpm: number,
-    readonly startOffset: number,
-    readonly beatsPerMeasure: number) {
-    this.secondsPerBeat = 60 / this._bpm;
+    bpm: number,
+    startOffset: number,
+    readonly beatsPerMeasure: number,
+    beatElapsedCallback: IBeatElapsedCallback) {
+    this.clock = new Clock(this._audioContext, bpm, startOffset, beatElapsedCallback);
   }
-  private _playbackRate: number = 1;
-  get playbackRate(): number { return this._playbackRate; }
+  clock: Clock;
+  get playbackRate() { return this.clock.playbackRate; }
   set playbackRate(rate: number) {
-    this._playbackRate = rate;
+    this.clock.playbackRate = rate;
     this._tracks.forEach(track => track.playbackRate = rate);
   }
-  get bpm(): number { return this._bpm * this._playbackRate; }
-  readonly secondsPerBeat: number;
-  asset(fileName: string): string { return `${this._path}${fileName}`; }
+  asset(fileName: string) { return `${this._path}${fileName}`; }
   readonly groups: string[] = [];
   private _group: string = "";
-  activeGroup(group: string = ""): boolean { return this._group === group; }
+  activeGroup(group: string = "") { return this._group === group; }
   filter(group: string = ""): void {
     this._group = group;
     this._tracks.forEach((track) => this.tracks.indexOf(track) >= 0 ? track.unmute(2) : track.mute(3));
