@@ -19,7 +19,7 @@ export class BreakdownComponent implements OnInit {
     this._gainNode = this._audioContext.createGain();
     this._gainNode.connect(this._audioContext.destination);
     Song.load(http, this._audioContext, this._gainNode, this.route.snapshot.params['songId'], this._synchronise)
-      .then(song => this.song = song);
+      .then((song) => { this.song = song; this._synchronise(0); });
   }
   song?: Song; section?: Section; measure?: Measure;
   ngOnInit(): void { }
@@ -63,6 +63,11 @@ export class BreakdownComponent implements OnInit {
   }
 
   private _synchronise: IBeatElapsedCallback = (beatsElapsed: number) => {
+    if (!beatsElapsed) {
+      this.section = this.song!.sections[0];
+      this.measure = this.section!.measures[0];
+      return;
+    }
     if (!(this.section && this.section!.isForBeatIndex(beatsElapsed))) {
       delete this.section;
       for (let i = 0; i < this.song!.sections.length; i++) {
@@ -137,5 +142,17 @@ export class BreakdownComponent implements OnInit {
   }
 
   first() { this.goToBeat(0); }
-  next() { this.goToBeat(this.section ? this.section!.endIndex + 1 : 0); }
+
+  previous() {
+    if (this.song!.clock.beatsElapsed >= this.section!.startIndex + this.song!.beatsPerMeasure)
+      this.goToBeat(this.section!.startIndex);
+    else if (!this.section!.isFirst)
+      this.goToBeat(this.song!.sections[this.section!.previous!].startIndex);
+  }
+
+  next() {
+    if (!this.section!.isLast)
+      this.goToBeat(this.song!.sections[this.section!.next!].startIndex);
+  }
+
 }

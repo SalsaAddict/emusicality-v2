@@ -46,8 +46,12 @@ export class Song {
                 else song.tracks.addTrack(track);
               });
               let currentIndex: number = 1, measure: Measure;
-              breakdown.sections.forEach((s: ISection) => {
-                let section = new Section(s.description, currentIndex),
+              breakdown.sections.forEach((s, sIndex, sArray) => {
+                let isFirst = sIndex === 0,
+                  isLast = sIndex === sArray.length - 1,
+                  previous = (!isFirst) ? sIndex - 1 : undefined,
+                  next = (!isLast) ? sIndex + 1 : undefined,
+                  section = new Section(s.description, currentIndex, isFirst, isLast, previous, next),
                   framework: string | undefined = s.framework;
                 if (typeof s.measures === "number") {
                   for (let i = 1; i <= s.measures; i++) {

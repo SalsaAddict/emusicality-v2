@@ -121,8 +121,12 @@
                         </div>
                     </div>
                     <div class="btn-group btn-group-sm" [ngSwitch]="playing">
-                        <button type="button" class="btn btn-primary" (click)="first()">
+                        <button type="button" class="btn btn-primary" (click)="first()" [disabled]="section?.isFirst">
                             <i class="fa fa-fw fa-lg fa-fast-backward"></i>
+                        </button>
+                        <button type="button" class="btn btn-primary" (click)="previous()"
+                            [disabled]="section?.isFirst">
+                            <i class="fa fa-fw fa-lg fa-backward"></i>
                         </button>
                         <button type="button" class="btn btn-primary" (click)="play()" *ngSwitchCase="false">
                             <i class="fa fa-fw fa-lg fa-play"></i>
@@ -130,7 +134,7 @@
                         <button type="button" class="btn btn-primary" (click)="pause()" *ngSwitchCase="true">
                             <i class="fa fa-fw fa-lg fa-pause"></i>
                         </button>
-                        <button type="button" class="btn btn-primary" (click)="next()">
+                        <button type="button" class="btn btn-primary" (click)="next()" [disabled]="section?.isLast">
                             <i class="fa fa-fw fa-lg fa-forward"></i>
                         </button>
                     </div>
@@ -140,3 +144,4 @@
     </div>
 
 </fieldset>
+<pre>{{section | json}}</pre>
