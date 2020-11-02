@@ -96,12 +96,10 @@ export class Song {
     this.clock = new Clock(_audioContext, bpm, startOffset, beatElapsedCallback);
     this.tracks = new Tracks(_audioContext, _destinationNode, this.asset);
   }
-  readonly clock: Clock;
+  readonly asset: IAssetFn = (fileName: string) => { return `${this._path}${fileName}`; }
   get playbackRate() { return this.clock.playbackRate; }
-  set playbackRate(rate: number) {
-    this.clock.playbackRate = this.tracks.playbackRate = rate;
-  }
-  asset: IAssetFn = (fileName: string) => { return `${this._path}${fileName}`; }
-  tracks: Tracks;
-  sections: Section[] = [];
+  set playbackRate(rate: number) { this.clock.playbackRate = this.tracks.playbackRate = rate; }
+  readonly clock: Clock;
+  readonly tracks: Tracks;
+  readonly sections: Section[] = [];
 }

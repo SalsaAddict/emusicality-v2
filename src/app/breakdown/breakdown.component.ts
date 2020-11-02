@@ -50,8 +50,9 @@ export class BreakdownComponent implements OnInit {
 
   readonly playbackRates: string[] = ["slow", "normal", "fast"];
   private _playbackRate: string = "normal";
+  get playbackRate() { return this._playbackRate; }
   isPlaybackRate(rate: string) { return rate === this._playbackRate; }
-  playbackRate(rate: string) {
+  setPlaybackRate(rate: string) {
     let n: number;
     switch (this._playbackRate = rate) {
       case "fast": n = 1.1; break;
@@ -95,9 +96,7 @@ export class BreakdownComponent implements OnInit {
     return `fa fa-fw fa-lg ${icon} ${context} ${animation} ${margin}`.replace(/\s+/g, " ");
   }
 
-  seek(): Promise<void[]> {
-    return this.song!.tracks.seek(this.song!.clock.secondsElapsed);
-  }
+  seek() { return this.song!.tracks.seek(this.song!.clock.secondsElapsed); }
 
   play() {
     this._busy = true;
@@ -126,14 +125,17 @@ export class BreakdownComponent implements OnInit {
     }, 600);
   }
 
-  next(): void {
+  goToBeat(beat: number) {
     let playing: boolean = this.playing;
     setGain(this._gainNode, 0, 0);
     if (playing) {
       this.song!.clock.stop();
       this.song!.tracks.pause();
     }
-    this.song!.clock.beatsElapsed = this.section ? this.section!.endIndex + 1 : 0;
-    this.seek().then(() => { if (playing) this.play(); });
+    this._synchronise(this.song!.clock.beatsElapsed = beat);
+    return this.seek().then(() => { if (playing) this.play(); });
   }
+
+  first() { this.goToBeat(0); }
+  next() { this.goToBeat(this.section ? this.section!.endIndex + 1 : 0); }
 }

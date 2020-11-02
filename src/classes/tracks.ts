@@ -17,7 +17,8 @@ export class Tracks {
     }
     readonly groups: string[] = [];
     private _filter?: string;
-    filter(groupName?: string) {
+    get filter() { return this._filter; }
+    setFilter(groupName?: string) {
         this._filter = groupName;
         this._tracks.forEach(track => track.activate(groupName));
     }

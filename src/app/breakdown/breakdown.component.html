@@ -26,7 +26,7 @@
         <div class="card-body p-2 text-center">
             <div class="row">
                 <div class="col-6 text-center">
-                    <p [ngSwitch]="!!section" class="initialism my-0">
+                    <p [ngSwitch]="!!section?.description" class="initialism my-0">
                         <small class="text-muted">Section</small>
                         <br>
                         <b *ngSwitchCase="true" class="text-info" [innerText]="section!.description"></b>
@@ -42,7 +42,7 @@
                     </p>
                 </div>
             </div>
-            <small class="text-muted initialism my-0">Phrasing</small>
+            <p class="initialism my-0"><small class="text-muted">Phrasing</small></p>
             <div [ngSwitch]="!!section">
                 <div *ngSwitchCase="true" class="d-flex flex-row justify-content-center">
                     <div *ngFor="let m of section!.measures; last as isLast">
@@ -61,13 +61,30 @@
             </div>
         </div>
         <div class="card-body p-2">
-            <div class="d-flex mb-2" *ngIf="song!.tracks.groups.length">
-                <div class="btn-group btn-group-sm mx-auto" role="group">
+            <div class="d-flex mb-2 justify-content-center" *ngIf="song!.tracks.groups.length">
+                <div class="btn-group btn-group-sm d-none d-sm-block" role="group">
                     <button type="button" class="btn btn-primary initialism"
-                        [ngClass]="{ 'active': song!.tracks.isFilter() }" (click)="song!.tracks.filter()">All</button>
+                        [ngClass]="{ 'active': song!.tracks.isFilter() }"
+                        (click)="song!.tracks.setFilter()">All</button>
                     <button type="button" class="btn btn-primary initialism" *ngFor="let group of song!.tracks.groups"
-                        [ngClass]="{ 'active': song!.tracks.isFilter(group) }" (click)="song!.tracks.filter(group)"
+                        [ngClass]="{ 'active': song!.tracks.isFilter(group) }" (click)="song!.tracks.setFilter(group)"
                         [innerText]="group"></button>
+                </div>
+                <div ngbDropdown placement="bottom" class="d-inline-block mr-2 d-sm-none">
+                    <button class="btn btn-primary btn-sm initialism" id="playbackRateDropdown" ngbDropdownToggle>
+                        <span [innerText]="song!.tracks.filter || 'All Instruments'"></span>
+                    </button>
+                    <div ngbDropdownMenu aria-labelledby="playbackRateDropdown">
+                        <button ngbDropdownItem (click)="song!.tracks.setFilter()">
+                            <span class="initialism">All Instruments</span>
+                            <i class="fa fa-fw fa-check" *ngIf="song!.tracks.isFilter()"></i>
+                        </button>
+                        <button ngbDropdownItem *ngFor="let group of song!.tracks.groups"
+                            (click)="song!.tracks.setFilter(group)">
+                            <span class="initialism" [innerText]="group"></span>
+                            <i class="fa fa-fw fa-check" *ngIf="song!.tracks.isFilter(group)"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="list-group mx-auto">
@@ -86,17 +103,31 @@
         <div class="card-footer p-2">
             <div class="d-flex">
                 <div class="btn-toolbar mx-auto">
-                    <div class="btn-group btn-group-sm mr-3">
+                    <div class="btn-group btn-group-sm mr-3 d-none d-sm-block">
                         <button type="button" class="btn btn-primary" [ngClass]="{ 'active': isPlaybackRate(rate) }"
-                            *ngFor="let rate of playbackRates" (click)="playbackRate(rate)">
+                            *ngFor="let rate of playbackRates" (click)="setPlaybackRate(rate)">
                             <span class="initialism" [innerText]="rate"></span>
                         </button>
                     </div>
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-primary" (click)="play()" *ngIf="!playing">
+                    <div ngbDropdown placement="top-left" class="d-inline-block mr-2 d-sm-none">
+                        <button class="btn btn-primary btn-sm initialism" id="playbackRateDropdown" ngbDropdownToggle>
+                            <span>Tempo</span>
+                        </button>
+                        <div ngbDropdownMenu aria-labelledby="playbackRateDropdown">
+                            <button ngbDropdownItem *ngFor="let rate of playbackRates" (click)="setPlaybackRate(rate)">
+                                <span class="initialism" [innerText]="rate"></span>
+                                <i class="fa fa-fw fa-check" *ngIf="isPlaybackRate(rate)"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="btn-group btn-group-sm" [ngSwitch]="playing">
+                        <button type="button" class="btn btn-primary" (click)="first()">
+                            <i class="fa fa-fw fa-lg fa-fast-backward"></i>
+                        </button>
+                        <button type="button" class="btn btn-primary" (click)="play()" *ngSwitchCase="false">
                             <i class="fa fa-fw fa-lg fa-play"></i>
                         </button>
-                        <button type="button" class="btn btn-primary" (click)="pause()" *ngIf="playing">
+                        <button type="button" class="btn btn-primary" (click)="pause()" *ngSwitchCase="true">
                             <i class="fa fa-fw fa-lg fa-pause"></i>
                         </button>
                         <button type="button" class="btn btn-primary" (click)="next()">

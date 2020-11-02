@@ -17,7 +17,7 @@ export class Clock {
     get beatsElapsed() { return this._beatsElapsed; }
     set beatsElapsed(b: number) {
         this._beatsElapsed = b;
-        this._secondsActual = this._secondsElapsed = b * this._secondsPerBeat + this._startOffset;
+        this._secondsActual = this._secondsElapsed = b * this._secondsPerBeat + ((b > 0) ? this._startOffset : 0);
     }
     get bpm() { return this._bpm * this.playbackRate; }
     private _frameHandle?: number;
