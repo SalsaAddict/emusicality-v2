@@ -3,20 +3,20 @@ import { setGain } from "./setGain";
 
 export class Track implements ITrack {
   constructor(
-    private readonly _audioContext: AudioContext,
-    private readonly _destinationNode: AudioNode,
+    audioContext: AudioContext,
+    destinationNode: AudioNode,
     readonly description: string,
     readonly filename: string,
     readonly groupName?: string) {
     this._audioElement = document.createElement("audio");
-    this._sourceNode = _audioContext.createMediaElementSource(this._audioElement);
-    this._gainNodeV = _audioContext.createGain();
-    this._gainNodeM = _audioContext.createGain();
-    this._sourceNode.connect(this._gainNodeV).connect(this._gainNodeM).connect(this._destinationNode);
+    this._sourceNode = audioContext.createMediaElementSource(this._audioElement);
+    this._gainNodeV = audioContext.createGain();
+    this._gainNodeM = audioContext.createGain();
+    this._sourceNode.connect(this._gainNodeV).connect(this._gainNodeM).connect(destinationNode);
     this._audioElement.src = this.filename;
     this._audioElement.preload = "auto";
     this.volume("down");
-    this.unmute();
+    this.activate();
   }
   private readonly _audioElement: HTMLAudioElement;
   private readonly _sourceNode: MediaElementAudioSourceNode;
@@ -48,6 +48,13 @@ export class Track implements ITrack {
     }
     setGain(this._gainNodeV, value, fadeSeconds);
   }
-  mute(fadeSeconds: number = 0): void { setGain(this._gainNodeM, 0, fadeSeconds); }
-  unmute(fadeSeconds: number = 0): void { setGain(this._gainNodeM, 1, fadeSeconds); }
+  private _active: boolean = true;
+  get active(): boolean { return this._active; }
+  activate(groupName?: string) {
+    this._active = (!!groupName) ? this.groupName === groupName : true;
+    if (this._active)
+      setGain(this._gainNodeM, 1, 1.5);
+    else
+      setGain(this._gainNodeM, 0, 3);
+  }
 }

@@ -26,8 +26,10 @@ export class Clock {
             let elapsed = -time + (time = this._audioContext.currentTime);
             this._secondsActual += elapsed;
             let s = this._secondsElapsed += elapsed * this.playbackRate;
-            this._beatsElapsed = (s <= this._startOffset) ? 0 : Math.floor((s - this._startOffset) / this._secondsPerBeat) + 1;
-            this.beatElapsedCallback(this._beatsElapsed);
+            elapsed = this._beatsElapsed;
+            if (s <= this._startOffset) this._beatsElapsed = 0;
+            else this._beatsElapsed = Math.floor((s - this._startOffset) / this._secondsPerBeat) + 1;
+            if (elapsed !== this._beatsElapsed) this.beatElapsedCallback(this._beatsElapsed);
             this.start(time);
         });
     }

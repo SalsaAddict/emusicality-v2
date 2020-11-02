@@ -40,8 +40,6 @@ export class BreakdownComponent implements OnInit {
     }
   }
 
-  clock?: Clock;
-
   private _gainNode: GainNode;
 
   private _busy: boolean = false;
@@ -90,7 +88,7 @@ export class BreakdownComponent implements OnInit {
 
   measureClass(measure: Measure, isLast: boolean): string {
     let active: boolean = measure === this.measure!,
-      icon: string = !active ? "fa-circle-o" : measure.timingChange ? "fa-exclamation-circle" : measure.splitPhrase ? "fa-pause-circle" : "fa-circle",
+      icon: string = !active ? "fa-circle-o" : (measure.timingChange || measure.splitPhrase) ? "fa-exclamation-circle" : "fa-circle",
       context: string = measure.timingChange ? "text-danger" : measure.splitPhrase ? "text-warning" : "text-info",
       animation: string = active ? "animate__animated animate__faster animate__heartBeat" : "",
       margin: string = measure.splitPhrase && !isLast ? "mr-2" : "";
@@ -98,9 +96,7 @@ export class BreakdownComponent implements OnInit {
   }
 
   seek(): Promise<void[]> {
-    let promises: Promise<void>[] = [];
-    this.song!.tracks.forEach(track => promises.push(track.seek(this.song!.clock.secondsElapsed)));
-    return Promise.all(promises);
+    return this.song!.tracks.seek(this.song!.clock.secondsElapsed);
   }
 
   play() {
@@ -109,7 +105,7 @@ export class BreakdownComponent implements OnInit {
     this._resume().then(() => {
       this.seek().then(() => {
         this.song!.clock.start();
-        this.song!.tracks.forEach(track => track.play());
+        this.song!.tracks.play();
         setGain(this._gainNode, 1, 0.25);
         this._playing = true;
         this._busy = false;
@@ -121,7 +117,7 @@ export class BreakdownComponent implements OnInit {
     this._busy = true;
     setGain(this._gainNode, 0, 0.5);
     setTimeout(() => {
-      this.song!.tracks.forEach(track => track.pause());
+      this.song!.tracks.pause();
       this.song!.clock.stop();
       this._suspend().then(() => {
         this._playing = false;
@@ -135,7 +131,7 @@ export class BreakdownComponent implements OnInit {
     setGain(this._gainNode, 0, 0);
     if (playing) {
       this.song!.clock.stop();
-      this.song!.tracks.forEach(track => track.pause());
+      this.song!.tracks.pause();
     }
     this.song!.clock.beatsElapsed = this.section ? this.section!.endIndex + 1 : 0;
     this.seek().then(() => { if (playing) this.play(); });

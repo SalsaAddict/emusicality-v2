@@ -5,7 +5,9 @@ import { Track } from './track';
 import { Section } from './section';
 import { Measure } from './measure';
 import { Clock, IBeatElapsedCallback } from './clock';
+import { Tracks } from './tracks';
 
+export interface IAssetFn { (fileName: string): string; }
 export class Song {
   static load(
     http: HttpClient,
@@ -35,13 +37,13 @@ export class Song {
               breakdown.tracks.forEach((track: string | ITrack | ITrackGroup) => {
                 if (typeof track !== "string") {
                   if (track.description && track.filename)
-                    song.addTrack(track as ITrack);
+                    song.tracks.addTrack(track as ITrack);
                   else
                     Object.keys(track as ITrackGroup).forEach((groupName: string) => {
-                      (track as ITrackGroup)[groupName].forEach(item => song.addTrack(item, groupName));
+                      (track as ITrackGroup)[groupName].forEach(item => song.tracks.addTrack(item, groupName));
                     });
                 }
-                else song.addTrack(track);
+                else song.tracks.addTrack(track);
               });
               let currentIndex: number = 1, measure: Measure;
               breakdown.sections.forEach((s: ISection) => {
@@ -80,8 +82,8 @@ export class Song {
     });
   }
   constructor(
-    private readonly _audioContext: AudioContext,
-    private readonly _destinationNode: AudioNode,
+    _audioContext: AudioContext,
+    _destinationNode: AudioNode,
     private readonly _path: string,
     readonly songId: string,
     readonly title: string,
@@ -91,30 +93,15 @@ export class Song {
     startOffset: number,
     readonly beatsPerMeasure: number,
     beatElapsedCallback: IBeatElapsedCallback) {
-    this.clock = new Clock(this._audioContext, bpm, startOffset, beatElapsedCallback);
+    this.clock = new Clock(_audioContext, bpm, startOffset, beatElapsedCallback);
+    this.tracks = new Tracks(_audioContext, _destinationNode, this.asset);
   }
-  clock: Clock;
+  readonly clock: Clock;
   get playbackRate() { return this.clock.playbackRate; }
   set playbackRate(rate: number) {
-    this.clock.playbackRate = rate;
-    this._tracks.forEach(track => track.playbackRate = rate);
+    this.clock.playbackRate = this.tracks.playbackRate = rate;
   }
-  asset(fileName: string) { return `${this._path}${fileName}`; }
-  readonly groups: string[] = [];
-  private _group: string = "";
-  activeGroup(group: string = "") { return this._group === group; }
-  filter(group: string = ""): void {
-    this._group = group;
-    this._tracks.forEach((track) => this.tracks.indexOf(track) >= 0 ? track.unmute(2) : track.mute(3));
-  }
-  private readonly _tracks: Track[] = [];
-  addTrack(track: string | ITrack, groupName?: string): void {
-    if (groupName && this.groups.indexOf(groupName!) < 0) this.groups.push(groupName!);
-    if (typeof track === "string")
-      this._tracks.push(new Track(this._audioContext, this._destinationNode, track, this.asset(`${track.toLowerCase()}.mp3`), groupName));
-    else
-      this._tracks.push(new Track(this._audioContext, this._destinationNode, track.description, this.asset(track.filename), groupName));
-  }
-  get tracks(): Track[] { return this._group ? this._tracks.filter(track => track.groupName === this._group) : this._tracks; }
+  asset: IAssetFn = (fileName: string) => { return `${this._path}${fileName}`; }
+  tracks: Tracks;
   sections: Section[] = [];
 }
