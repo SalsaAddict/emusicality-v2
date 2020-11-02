@@ -31,7 +31,7 @@ export class Song {
                 catalog.songs[songId].artist,
                 catalog.songs[songId].genre,
                 catalog.songs[songId].bpm,
-                breakdown.startOffset || 0,
+                breakdown.startOffset ?? 0,
                 breakdown.beatsPerMeasure,
                 beatElapsedCallback);
               breakdown.tracks.forEach((track: string | ITrack | ITrackGroup) => {

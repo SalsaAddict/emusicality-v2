@@ -5,7 +5,7 @@ import { Song } from '../../classes/song';
 import { Section } from 'src/classes/section';
 import { Measure } from 'src/classes/measure';
 import { setGain } from '../../classes/setGain';
-import { Clock, IBeatElapsedCallback } from 'src/classes/clock';
+import { IBeatElapsedCallback } from 'src/classes/clock';
 
 @Component({
   selector: 'app-breakdown',

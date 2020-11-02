@@ -16,8 +16,12 @@
                                 <span [innerText]="song!.clock.bpm | number: '1.0-0'"></span>
                                 <span>&nbsp;bpm</span>
                             </p>
-                            <h3 class="mt-1 mb-0" [innerText]="beat | number"
-                                [ngClass]="{ 'text-danger font-weight-bold': beat === 1 }"></h3>
+                            <h3 class="mt-1 mb-0" [ngSwitch]="!!beat">
+                                <span *ngSwitchCase="false">&mdash;</span>
+                                <span *ngSwitchCase="true" [ngClass]="{ 'text-danger': beat === 1 }">
+                                    <span [innerText]="beat"></span>
+                                </span>
+                            </h3>
                         </div>
                     </div>
                 </div>
@@ -121,11 +125,10 @@
                         </div>
                     </div>
                     <div class="btn-group btn-group-sm" [ngSwitch]="playing">
-                        <button type="button" class="btn btn-primary" (click)="first()" [disabled]="section?.isFirst">
+                        <button type="button" class="btn btn-primary" (click)="first()">
                             <i class="fa fa-fw fa-lg fa-fast-backward"></i>
                         </button>
-                        <button type="button" class="btn btn-primary" (click)="previous()"
-                            [disabled]="section?.isFirst">
+                        <button type="button" class="btn btn-primary" (click)="previous()">
                             <i class="fa fa-fw fa-lg fa-backward"></i>
                         </button>
                         <button type="button" class="btn btn-primary" (click)="play()" *ngSwitchCase="false">
@@ -142,6 +145,4 @@
             </div>
         </div>
     </div>
-
 </fieldset>
-<pre>{{section | json}}</pre>
